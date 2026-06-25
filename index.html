@@ -11,7 +11,7 @@
     
     <title>Gerenciador de Fila - Valet</title>
     
-    <link rel="icon" type="image/png" href="ESTAPAR-16.png">
+    <link rel="icon" type="image/png" href="ESTAPAR-04.png">
     <link rel="apple-touch-icon" href="ESTAPAR-04.png">
     
     <style>
@@ -52,7 +52,7 @@
         .painel-coluna { flex: 1; background: #222; padding: 15px; border-radius: 10px; }
         .painel-coluna h3 { margin-top: 0; color: var(--warning); border-bottom: 2px solid #444; padding-bottom: 10px; text-align: center;}
         
-        .alerta-atraso { animation: piscarVermelho 1s infinite alternate; border: 2px solid #ff0000; }
+        .alerta-atraso { animation: piscarVermelho 1s infinite alternate; border: 2px solid #ff0000; !important; }
         @keyframes piscarVermelho { 0% { background-color: #2a2a2a; } 100% { background-color: #630000; } }
 
         .view-toggle { margin-bottom: 20px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; width: 100%; max-width: 900px;}
@@ -134,7 +134,7 @@
 
     <div id="tela-painel" class="container container-painel hidden">
         <div class="painel-header-box">
-            TEMPO MÉDIO DE ATENDIMENTO (TMA): <span id="display-tempo-medio">Calculando...</span>
+            TEMPO MÉDIO ATENDIMENTO (TMA): <span id="display-tempo-medio">Calculando...</span>
         </div>
         
         <div class="painel-grid">
@@ -203,9 +203,21 @@
 
         window.onload = configurarAcessos;
 
+        // AJUSTE 1: INTELIGÊNCIA DO BOTÃO PS (SOMA SEM APAGAR)
         function botaoPsPressionado() {
-            try { document.getElementById("input-prisma").value = "PS"; } catch(e) {}
+            try { 
+                var campoPrisma = document.getElementById("input-prisma");
+                var valorAtual = campoPrisma.value.trim();
+                
+                if (valorAtual === "") {
+                    campoPrisma.value = "PS";
+                } else {
+                    // Se já tiver o número, junta mantendo o número antes do PS
+                    campoPrisma.value = valorAtual + " PS";
+                }
+            } catch(e) {}
         }
+
         function botaoFuturo() {
             console.log("Botão reservado para o futuro.");
         }
@@ -341,6 +353,7 @@
             return minutos + " min";
         }
 
+        // AJUSTE 2: REPLICADO O ALERTA PISCANTE DIRETAMENTE NO PAINEL DO CLIENTE
         function renderizarPainel(dados) {
             try {
                 document.getElementById("display-tempo-medio").innerText = formatarTempo(dados.tempo_medio);
@@ -350,9 +363,19 @@
                 if (dados.fila.length === 0) {
                     colSolicitacoes.innerHTML = "<p style='color:#666; text-align:center;'>Vazio</p>";
                 } else {
+                    var agora = Date.now();
+                    
                     dados.fila.forEach(function(carro) {
+                        var tempoDecorridoMs = agora - carro.id;
+                        var classeAlerta = "";
+                        
+                        // Executa a verificação matemática para o Painel do cliente também piscar
+                        if (tempoDecorridoMs > tempoMedioAtualMs) {
+                            classeAlerta = "alerta-atraso";
+                        }
+
                         colSolicitacoes.innerHTML += 
-                            "<div class='item-fila' style='padding:10px;'>" +
+                            "<div class='item-fila " + classeAlerta + "' style='padding:10px;'>" +
                                 "<strong>Prisma: " + carro.prisma + "</strong>" +
                                 "<div class='item-dados' style='font-size:0.9rem;'>" +
                                     "Placa: " + (carro.placa || 'N/A') + " | Modelo: " + (carro.modelo || 'N/A') + "<br>" +
